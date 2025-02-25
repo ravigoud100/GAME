@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Jet Fighter: Solar Defense</title>
+    <style>
+        canvas {
+            border: 1px solid white;
+            background: url('https://images.unsplash.com/photo-1538378918044-0c778d40b865?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+        }
+        body {
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div id="score">Score: 0</div>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+
+        // Game objects
+        const jet = {
+            x: canvas.width / 2,
+            y: canvas.height - 50,
+            width: 30,
+            height: 20,
+            speed: 5
+        };
+
+        let bullets = [];
+        let enemies = [];
+        let score = 0;
+
+        // Controls
+        let leftPressed = false;
+        let rightPressed = false;
+        let spacePressed = false;
+
+        // Event listeners for controls
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') leftPressed = true;
+            if (e.key === 'ArrowRight') rightPressed = true;
+            if (e.key === ' ') spacePressed = true;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft') leftPressed = false;
+            if (e.key === 'ArrowRight') rightPressed = false;
+            if (e.key === ' ') spacePressed = false;
+        });
+
+        // Bullet creation
+        function createBullet() {
+            bullets.push({
+                x: jet.x + jet.width / 2 - 2,
+                y: jet.y,
+                width: 4,
+                height: 10,
+                speed: 7
+            });
+        }
+
+        // Enemy creation
+        function createEnemy() {
+            enemies.push({
+                x: Math.random() * (canvas.width - 30),
+                y: -30,
+                width: 30,
+                height: 30,
+                speed: 2 + Math.random() * 2
+            });
+        }
+
+        // Game loop
+        function gameLoop() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Move and draw jet
+            if (leftPressed && jet.x > 0) jet.x -= jet.speed;
+            if (rightPressed && jet.x < canvas.width - jet.width) jet.x += jet.speed;
+            ctx.fillStyle = 'silver';
+            ctx.fillRect(jet.x, jet.y, jet.width, jet.height);
+
+            // Handle bullets
+            if (spacePressed) {
+                createBullet();
+                spacePressed = false; // Prevent continuous firing
+            }
+
+            bullets.forEach((bullet, index) => {
+                bullet.y -= bullet.speed;
+                ctx.fillStyle = 'yellow';
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+
+                // Remove bullets that go off screen
+                if (bullet.y < 0) bullets.splice(index, 1);
+            });
+
+            // Handle enemies
+            if (Math.random() < 0.02) createEnemy();
+
+            enemies.forEach((enemy, enemyIndex) => {
+                enemy.y += enemy.speed;
+                ctx.fillStyle = 'green';
+                ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+
+                // Check collision with bullets
+                bullets.forEach((bullet, bulletIndex) => {
+                    if (bullet.x < enemy.x + enemy.width &&
+                        bullet.x + bullet.width > enemy.x &&
+                        bullet.y < enemy.y + enemy.height &&
+                        bullet.y + bullet.height > enemy.y) {
+                        enemies.splice(enemyIndex, 1);
+                        bullets.splice(bulletIndex, 1);
+                        score += 10;
+                        scoreDisplay.textContent = `Score: ${score}`;
+                    }
+                });
+
+                // Remove enemies that go off screen
+                if (enemy.y > canvas.height) enemies.splice(enemyIndex, 1);
+            });
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start the game
+        gameLoop();
+    </script>
+</body>
+</html>
